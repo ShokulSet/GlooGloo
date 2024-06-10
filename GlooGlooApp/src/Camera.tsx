@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCameraDevice, Camera, useCameraPermission, PhotoFile } from 'react-native-vision-camera';
 import { Pressable, StyleSheet, Text, View, PermissionsAndroid } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
@@ -30,7 +30,7 @@ const requestPermission = async () => {
         buttonPositive: 'OK',
       }
     )
-    if (grantedCamera === PermissionsAndroid.RESULTS.GRANTED && grantedWrite === PermissionsAndroid.RESULTS.GRANTED) {
+    if (grantedCamera === PermissionsAndroid.RESULTS.GRANTED) { //&& grantedWrite === PermissionsAndroid.RESULTS.GRANTED) {
       console.log('Permission Granted');
       return true;
     } else {
@@ -38,11 +38,23 @@ const requestPermission = async () => {
       return false;
     }
   } catch (err) {
-    console.warn(err);
+    console.log(err);
+    return false;
   }
 };
 
-function CameraScreen({ navigation }) {
+function CameraScreen({ navigation }: {navigation: any}) {
+    const [ hasPermission, setPermission ] = useState(false);
+
+    useEffect(() => {
+      requestPermission().then(granted => {
+        setPermission(granted);
+        console.log("just recieve permission", granted);
+        console.log(hasPermission);
+      })
+
+    }, []);
+    
     const device = useCameraDevice('back')
     const [photo, setPhoto] = useState<PhotoFile>();
     const [modalVisible, setModalVisible] = useState(false);
@@ -60,23 +72,24 @@ function CameraScreen({ navigation }) {
         // setModalVisible(true)
     }
 
-    if (!requestPermission()) {
-      requestPermission();
-    }
-    if (!device) {
-      return <Text> Camera not found.</Text>
-    }
-
     return (
       // Display camera view
       <View style={styles.centeredView}>
-        <Camera
-          ref={camera}
+        <View
           style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={true}
-          photo={true}
-        /> 
+        >
+          {  hasPermission ?
+
+            (<Camera
+              ref={camera}
+              style={StyleSheet.absoluteFill}
+              device={device}
+              isActive={true}
+              photo={true}
+            /> ) : (<Text>No Permission</Text>)
+          }
+
+        </View>
         
        <Feather name='maximize' color={'white'} size={180} style={{bottom: 80}}/>
 
